@@ -35,9 +35,11 @@ void USpitfireEngine::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 void USpitfireEngine::SetThrottle(float ThrottleValue)
 {
-	ThrottleValue = FMath::Clamp<float>(ThrottleValue, -1.0, 1.0);
-	SpitfireCurrentThrottle += ThrottleValue * SpitfireThrottleScaler * GetWorld()->GetTimeSeconds();
+	float CurrentSecondsTime = GetWorld()->GetTimeSeconds();
+	SpitfireCurrentThrottle += FMath::Clamp<float>(ThrottleValue, -1.0, 1.0) * CurrentSecondsTime;
 	SpitfireCurrentThrottle = FMath::Clamp<float>(SpitfireCurrentThrottle, 0.0, 1.0);
+
+	UE_LOG(LogTemp, Warning, TEXT("PIGGIE CurrentSecondsTime: %f"), CurrentSecondsTime);
 }
 
 float USpitfireEngine::GetThrottle()
@@ -52,12 +54,13 @@ float USpitfireEngine::GetMaxThrust()
 
 FVector USpitfireEngine::GetThrustVector()
 {
-	FVector EngineVector = GetForwardVector();
-	EngineVector.Z = 0;
-	EngineVector.Y = 0;
-	FVector ForceApplied = EngineVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
+	//FVector EngineVector = GetForwardVector();
+	//EngineVector.Z = 0;
+	//EngineVector.Y = 0;
+	//FVector ForceApplied = EngineVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
 
-	return ForceApplied;
+	//return ForceApplied;
+	return FVector(0);
 }
 
 FVector USpitfireEngine::GetForceLocation()

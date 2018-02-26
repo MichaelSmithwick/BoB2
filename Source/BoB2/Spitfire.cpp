@@ -15,6 +15,9 @@ ASpitfire::ASpitfire()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Set this pawn to be controlled by the lowest-numbered player
+	AutoPossessPlayer = EAutoReceiveInput::Player0;
+
 }
 
 // Called when the game starts or when spawned
@@ -78,8 +81,8 @@ void ASpitfire::ForwardThrust()
 	FVector Fuselage = GetActorLocation();
 	FVector Delta = Fuselage - ForceLocation;
 
-	UE_LOG(LogTemp,Warning,TEXT("GOOSE Fuselage: %s, Thrust: %s, Delta: %s, Applied Force Vector: %s"),
-		*(Fuselage.ToString()),*(ForceLocation.ToString()),*(Delta.ToString()),*(ForceApplied.ToString()))
+	//UE_LOG(LogTemp,Warning,TEXT("GOOSE Fuselage: %s, Thrust: %s, Delta: %s, Applied Force Vector: %s"),
+	//*(Fuselage.ToString()), *(ForceLocation.ToString()), *(Delta.ToString()), *(ForceApplied.ToString()))
 
 	UPrimitiveComponent* SpitfireRoot = Cast<UPrimitiveComponent>(GetRootComponent());
 	if (ensure(SpitfireRoot != nullptr))

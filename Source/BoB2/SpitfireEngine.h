@@ -36,15 +36,10 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	// How much to scale the throttle input
-	// Assumes a throttle input range of -1.0 to 1.0 
-	UPROPERTY(EditAnywhere, Category = "Throttle")
-	float SpitfireThrottleScaler = 0.0003;
-
 	UPROPERTY(VisibleAnywhere, Category = "Throttle")
 	float SpitfireCurrentThrottle = 0.0;
 
 	UPROPERTY(EditAnywhere, Category = "Throttle")
-	float SpitfireMaxThrust = 100000.0;
+	float SpitfireMaxThrust = 10000000.0;
 
 };

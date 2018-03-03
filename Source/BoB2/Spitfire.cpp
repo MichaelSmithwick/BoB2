@@ -41,24 +41,30 @@ void ASpitfire::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// calculate roll around X axis which is retrieved from the forward vector
-	FVector FwdVector = GetForwardVector();
-	FwdVector *= Controls.Aileron * RollDegreesPerSecond * DeltaTime;
-	ApplyTorque(FwdVector);
-
-	// calculate pitch around Y axis which is retreived from the right vector
-	FVector RghtVector = GetActorRightVector();
-	RghtVector *= Controls.Elevator * PitchDegreesPerSecond * DeltaTime;
-	ApplyTorque(RghtVector);
-
-	// calculate yaw around Z axis which is retreived from the up vector
-	FVector UpVector = GetActorUpVector();
-	UpVector *= Controls.Rudder * YawDegreesPerSecond * DeltaTime;
-	ApplyTorque(UpVector);
+	ApplyControls(DeltaTime);
 
 	ForwardThrust();
 	//ApplyDrag();
 
+}
+
+void ASpitfire::ApplyControls(float DeltaTime)
+{
+	// calculate roll from the forward vector
+	// calculate pitch from the right vector
+	// calculate yaw from the up vector
+	FVector ForwardVector = GetForwardVector();
+	FVector RightVector = GetActorRightVector();
+	FVector UpVector = GetActorUpVector();
+
+	// scale the vectors and add together
+	ForwardVector *= Controls.Aileron * RollDegreesPerSecond * DeltaTime;
+	RightVector *= Controls.Elevator * PitchDegreesPerSecond * DeltaTime;
+	UpVector *= Controls.Rudder * YawDegreesPerSecond * DeltaTime;
+	FVector ComboControlVector = ForwardVector + RightVector + UpVector;
+
+	// apply torque
+	ApplyTorque(ComboControlVector);
 }
 
 // Apply torque to the airframe
@@ -150,19 +156,29 @@ void ASpitfire::ApplyDrag()
 	// calculate parasitic drag which depends on current velocity (in this case throttle setting)
 }
 
+// add @YawAmount to the Rudder setting and check limits
 void ASpitfire::YawRight(float YawAmount)
 {
-	Controls.Rudder = YawAmount;
+	SetControlSurface(Controls.Rudder, YawAmount, MaxYawDegPerSec);
 }
 
+// add @PitchAmount to Elevator setting and check limits
 void ASpitfire::PitchUp(float PitchAmount)
 {
-	Controls.Elevator = PitchAmount;
+	SetControlSurface(Controls.Elevator, PitchAmount, MaxPitchDegPerSec);
 }
 
+// add @RollAmount to Aileron setting and check limits
 void ASpitfire::RollRight(float RollAmount)
 {
-	Controls.Aileron = RollAmount;
+	SetControlSurface(Controls.Aileron, RollAmount, MaxRollDegPerSec);
+}
+
+// add @DeltaChange to @ControlSurface and limit the result to range bounded by @LowLimit and @HighLimit
+void ASpitfire::SetControlSurface(float& ControlSurface, float DeltaChange, float Limit)
+{
+	ControlSurface += DeltaChange;
+	ControlSurface = FMath::Clamp<float>(ControlSurface, -Limit, Limit);
 }
 
 void ASpitfire::GetControlSurfaces(float & Aileron, float & Elevator, float & Rudder) const
@@ -179,7 +195,15 @@ FControlSurface& ASpitfire::GetControlSurfaces() const
 
 void ASpitfire::CenterControls()
 {
-	YawRight(0.0);
-	PitchUp(0.0);
-	RollRight(0.0);
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetRootComponent());
+	if (ensure(PrimitiveComponent))
+	{
+		FVector AngularVelocity = PrimitiveComponent->GetPhysicsAngularVelocityInDegrees();
+		AngularVelocity *= (-1.0 * AngularMultiplier);
+		PrimitiveComponent->AddTorqueInDegrees(AngularVelocity, NAME_None, true);
+	}
+
+	Controls.Aileron = 0.0;
+	Controls.Elevator = 0.0;
+	Controls.Rudder = 0.0;
 }

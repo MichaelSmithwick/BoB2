@@ -33,6 +33,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void ApplyControls(float DeltaTime);
+
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -54,8 +56,6 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void RollRight(float RollAmount);
-
-	void GetControlSurfaces(float& Aileron, float& Elevator, float& Rudder) const;
 
 	UFUNCTION(BlueprintCallable)
 	struct FControlSurface& GetControlSurfaces() const;
@@ -100,18 +100,31 @@ private:
 	float CurrentElevator = 0.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float PitchDegreesPerSecond = 30.0;
+	float PitchDegreesPerSecond = 45.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float RollDegreesPerSecond = 30.0;
+	float RollDegreesPerSecond = 60.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float YawDegreesPerSecond = 30.0;
+	float YawDegreesPerSecond = 60.0;
+
+	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
+	float MaxRollDegPerSec = 300.0;
+
+	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
+	float MaxPitchDegPerSec = 300.0;
+
+	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
+	float MaxYawDegPerSec = 300.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
 	float DragCoefficient = 10000.0;
 
-	FRotator LastRotation = FRotator(0.0, 0.0, 0.0);
+	// This value is multiplied with the negative "angular velocity in degrees" vector 
+	// and used to add negative torque to the aircraft to stop it from rotating about
+	// any of it's three axes
+	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
+	float AngularMultiplier = 75.0;
 
 	USpitfireEngine* SpitfireEngine = nullptr;
 
@@ -125,4 +138,9 @@ private:
 
 	// apply torque to airframe in direction and strength given by the TorqueVector
 	void ApplyTorque(const FVector& TorqueVector) const;
+
+	void GetControlSurfaces(float& Aileron, float& Elevator, float& Rudder) const;
+
+	// add @DeltaChange to @ControlSurface and limit the result to range bounded by @LowLimit and @HighLimit
+	void SetControlSurface(float& ControlSurface, float DeltaChange, float Limit);
 };

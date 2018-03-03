@@ -1,6 +1,7 @@
 // Copyright (c) IdeaShadow Company. All Rights Reserved.
 
 #include "SpitfireEngine.h"
+#include "Components/PrimitiveComponent.h"
 #include "Engine/World.h"
 
 
@@ -58,9 +59,20 @@ FVector USpitfireEngine::GetThrustVector()
 {
 	FRotator SocketRotator = GetSocketRotation(FName("Engine"));
 	FVector ForwardVector = SocketRotator.Vector();
-	UE_LOG(LogTemp, Warning, TEXT("ENGINE Forward Vector: %s"), *(ForwardVector.ToString()))
+
+	USceneComponent* Root = GetAttachmentRoot();
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Root);
 
 	FVector ThrustVector = ForwardVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
+
+	// if the throttle is currently at 0.0 then feed in a reverse direction vector
+	// to slow the plane to a stop.
+	FVector LinearVelocity = PrimitiveComponent->GetPhysicsLinearVelocity();
+	if (SpitfireCurrentThrottle < 0.001)
+	{
+		ThrustVector = -10.0 * LinearVelocity;
+	}
+
 	return ThrustVector;
 }
 

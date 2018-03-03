@@ -15,22 +15,25 @@ class BOB2_API USpitfireEngine : public UStaticMeshComponent
 public:	
 	// Sets default values for this component's properties
 	USpitfireEngine();
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SetThrottle(float ThrottleValue);
 	float GetThrottle();
 	float GetMaxThrust();
+
+	UFUNCTION(BlueprintCallable)
 	FVector GetThrustVector();
+
+	UFUNCTION(BlueprintCallable)
 	FVector GetForceLocation();
 
-	void GetSocketWorldLocationAndRotation(FVector& Location, FVector& Thrust);
+	void GetSocketWorldLocationAndThrust(FVector& Location, FVector& Thrust);
+
+
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
 
 private:
 	// How much to scale the throttle input
@@ -44,7 +47,4 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Throttle")
 	float SpitfireMaxThrust = 100000.0;
 
-
-
-	
 };

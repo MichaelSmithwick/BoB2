@@ -18,6 +18,10 @@ ASpitfire::ASpitfire()
 	// Set this pawn to be controlled by the lowest-numbered player
 	AutoPossessPlayer = EAutoReceiveInput::Player0;
 
+	Controls.Aileron = 0.0;
+	Controls.Elevator = 0.0;
+	Controls.Rudder = 0.0;
+
 }
 
 // Called when the game starts or when spawned
@@ -37,12 +41,35 @@ void ASpitfire::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FRotator CurrentRotation = GetActorRotation().GetNormalized();
-	FRotator DeltaRotation = CurrentRotation - LastRotation;
+	// calculate roll around X axis which is retrieved from the forward vector
+	FVector FwdVector = GetForwardVector();
+	FwdVector *= Controls.Aileron * RollDegreesPerSecond * DeltaTime;
+	ApplyTorque(FwdVector);
+
+	// calculate pitch around Y axis which is retreived from the right vector
+	FVector RghtVector = GetActorRightVector();
+	RghtVector *= Controls.Elevator * PitchDegreesPerSecond * DeltaTime;
+	ApplyTorque(RghtVector);
+
+	// calculate yaw around Z axis which is retreived from the up vector
+	FVector UpVector = GetActorUpVector();
+	UpVector *= Controls.Rudder * YawDegreesPerSecond * DeltaTime;
+	ApplyTorque(UpVector);
 
 	ForwardThrust();
-	ApplyDrag();
+	//ApplyDrag();
 
+}
+
+// Apply torque to the airframe
+// @TorqueVector determines direction and strength of torque
+void ASpitfire::ApplyTorque(const FVector& TorqueVector) const
+{
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(GetRootComponent());
+	if (ensure(PrimitiveComponent))
+	{
+		PrimitiveComponent->AddTorqueInDegrees(TorqueVector, NAME_None, true);
+	}
 }
 
 // Called to bind functionality to input
@@ -55,6 +82,11 @@ void ASpitfire::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ASpitfire::SetThrottle(float ThrottleValue)
 {
 	SpitfireEngine->SetThrottle(ThrottleValue);
+}
+
+void ASpitfire::KillThrottle()
+{
+	SetThrottle(0.0);
 }
 
 float ASpitfire::GetThrottle()
@@ -73,58 +105,81 @@ FVector ASpitfire::GetComponentLocation()
 }
 
 // moves spitfire by applying force based on Throttle value
+// since the engine is out in front of the spitfire mesh the engine socket must
+// be adjusted to offset vector changes when flying in a straight line.
 void ASpitfire::ForwardThrust()
 {
 	FVector ForceApplied, ForceLocation;
-	SpitfireEngine->GetSocketWorldLocationAndRotation(ForceLocation, ForceApplied);
-
-	FVector Fuselage = GetActorLocation();
-	FVector Delta = Fuselage - ForceLocation;
-
-	//UE_LOG(LogTemp,Warning,TEXT("GOOSE Fuselage: %s, Thrust: %s, Delta: %s, Applied Force Vector: %s"),
-	//*(Fuselage.ToString()), *(ForceLocation.ToString()), *(Delta.ToString()), *(ForceApplied.ToString()))
+	SpitfireEngine->GetSocketWorldLocationAndThrust(ForceLocation, ForceApplied);
 
 	UPrimitiveComponent* SpitfireRoot = Cast<UPrimitiveComponent>(GetRootComponent());
 	if (ensure(SpitfireRoot != nullptr))
 	{
 		SpitfireRoot->AddForceAtLocation(ForceApplied, ForceLocation);
+		//SpitfireRoot->AddForce(ForceApplied);
 	}
 }
 
 void ASpitfire::ApplyDrag()
 {
 	// calculate and apply airframe (static) drag
-	FRotator SpitfireRotator = GetActorRotation().GetNormalized();
-	FVector SpitfireVector = GetActorForwardVector();
-	float VelocityVector = FVector::DotProduct(SpitfireVector, FVector(1, 1, 1));
+	FVector Location = GetActorLocation();
+	FRotator Rotation = GetActorRotation();
+	// drag is in opposite direction of forward motion
+	Rotation = Rotation * -1.0;
 
-	//UE_LOG(LogTemp,Warning,TEXT("DUCK %f"),VelocityVector)
+	FVector Drag = Rotation.Vector();
 
-	SpitfireRotator.Roll = 0.0;
-	SpitfireRotator.Pitch = 0.0;
-	SpitfireRotator.Yaw += TrimYaw * VelocityVector;  // Stop the Induced Yaw
+	UE_LOG(LogTemp,Warning,TEXT("BULLDOG Drag Vector: %s"),*(Drag.ToString()))
 
-	SetActorRotation(SpitfireRotator);
+	// don't apply more drag than there is forward force.
+	FVector ForceApplied, ForceLocation;
+	SpitfireEngine->GetSocketWorldLocationAndThrust(ForceLocation, ForceApplied);
+	float ForwardForce = ForceApplied.Size();
+	DragCoefficient = FMath::Clamp<float>(DragCoefficient, 0.0, ForwardForce);
 
-	//UE_LOG(LogTemp,Warning,TEXT("PENGUIN Rotator: %s, Vector: %s"),*(SpitfireRotator.ToString()),*(SpitfireVector.ToString()))
+	Drag *= DragCoefficient;
+
+	UPrimitiveComponent* SpitfireRoot = Cast<UPrimitiveComponent>(GetRootComponent());
+	if (ensure(SpitfireRoot != nullptr))
+	{
+		SpitfireRoot->AddForceAtLocation(Drag, Location);
+		//SpitfireRoot->AddForce(ForceApplied);
+	}
 
 	// calculate parasitic drag which depends on current velocity (in this case throttle setting)
 }
 
 void ASpitfire::YawRight(float YawAmount)
 {
-	FRotator CurrentRotation = GetActorRotation().GetNormalized();
-	YawAmount = FMath::Clamp<float>(YawAmount, -180.0, 180.0);
-
-	CurrentRotation.Yaw += YawAmount;
-
-	SetActorRotation(CurrentRotation);
+	Controls.Rudder = YawAmount;
 }
 
 void ASpitfire::PitchUp(float PitchAmount)
 {
+	Controls.Elevator = PitchAmount;
 }
 
 void ASpitfire::RollRight(float RollAmount)
 {
+	Controls.Aileron = RollAmount;
+}
+
+void ASpitfire::GetControlSurfaces(float & Aileron, float & Elevator, float & Rudder) const
+{
+	Aileron = Controls.Aileron;
+	Elevator = Controls.Elevator;
+	Rudder = Controls.Rudder;
+}
+
+FControlSurface& ASpitfire::GetControlSurfaces() const
+{
+	return (FControlSurface&)Controls;
+}
+
+void ASpitfire::CenterControls()
+{
+	YawRight(0.0);
+	PitchUp(0.0);
+	RollRight(0.0);
 }

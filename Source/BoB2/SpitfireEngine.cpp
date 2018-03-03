@@ -33,13 +33,13 @@ void USpitfireEngine::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	// ...
 }
 
+// Set Throttle Level
+// @ThrottleValue input is between 1.0 (Throttle UP) and -1.0 (Throttle DOWN)
+// @USpitfireEngine::SpitfireCurrentThrottle is set
 void USpitfireEngine::SetThrottle(float ThrottleValue)
 {
-	float CurrentSecondsTime = GetWorld()->GetTimeSeconds();
-	SpitfireCurrentThrottle += FMath::Clamp<float>(ThrottleValue, -1.0, 1.0) * CurrentSecondsTime;
+	SpitfireCurrentThrottle += FMath::Clamp<float>(ThrottleValue, -1.0, 1.0) * GetWorld()->GetDeltaSeconds();
 	SpitfireCurrentThrottle = FMath::Clamp<float>(SpitfireCurrentThrottle, 0.0, 1.0);
-
-	UE_LOG(LogTemp, Warning, TEXT("PIGGIE CurrentSecondsTime: %f"), CurrentSecondsTime);
 }
 
 float USpitfireEngine::GetThrottle()
@@ -52,23 +52,26 @@ float USpitfireEngine::GetMaxThrust()
 	return SpitfireMaxThrust;
 }
 
+// Thrust Vector is in one direction only
+// The direction is along the forward vector of the engine socket
 FVector USpitfireEngine::GetThrustVector()
 {
-	//FVector EngineVector = GetForwardVector();
-	//EngineVector.Z = 0;
-	//EngineVector.Y = 0;
-	//FVector ForceApplied = EngineVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
+	FRotator SocketRotator = GetSocketRotation(FName("Engine"));
+	FVector ForwardVector = SocketRotator.Vector();
+	UE_LOG(LogTemp, Warning, TEXT("ENGINE Forward Vector: %s"), *(ForwardVector.ToString()))
 
-	//return ForceApplied;
-	return FVector(0);
+	FVector ThrustVector = ForwardVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
+	return ThrustVector;
 }
 
+// The force is being applied at the Engine Socket Location
 FVector USpitfireEngine::GetForceLocation()
 {
 	return GetSocketLocation(FName("Engine"));
 }
 
-void USpitfireEngine::GetSocketWorldLocationAndRotation(FVector & Location, FVector & Thrust)
+// Get the location and the thrust vector
+void USpitfireEngine::GetSocketWorldLocationAndThrust(FVector & Location, FVector & Thrust)
 {
 	Thrust = GetThrustVector();
 	Location = GetForceLocation();

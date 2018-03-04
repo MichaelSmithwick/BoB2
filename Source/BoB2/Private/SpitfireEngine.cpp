@@ -36,18 +36,20 @@ void USpitfireEngine::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 // Set Throttle Level
 // @ThrottleValue input is between 1.0 (Throttle UP) and -1.0 (Throttle DOWN)
-// @USpitfireEngine::SpitfireCurrentThrottle is set
+// @USpitfireEngine::SpitfireCurrentThrottle is set and clamped between 0.0 and 1.0
 void USpitfireEngine::SetThrottle(float ThrottleValue)
 {
 	SpitfireCurrentThrottle += FMath::Clamp<float>(ThrottleValue, -1.0, 1.0) * GetWorld()->GetDeltaSeconds();
 	SpitfireCurrentThrottle = FMath::Clamp<float>(SpitfireCurrentThrottle, 0.0, 1.0);
 }
 
+// getter for throttle setting
 float USpitfireEngine::GetThrottle()
 {
 	return SpitfireCurrentThrottle;
 }
 
+// getter for maximum thrust
 float USpitfireEngine::GetMaxThrust()
 {
 	return SpitfireMaxThrust;
@@ -57,16 +59,15 @@ float USpitfireEngine::GetMaxThrust()
 // The direction is along the forward vector of the engine socket
 FVector USpitfireEngine::GetThrustVector()
 {
+	// set thrust value for engine
 	FRotator SocketRotator = GetSocketRotation(FName("Engine"));
 	FVector ForwardVector = SocketRotator.Vector();
-
-	USceneComponent* Root = GetAttachmentRoot();
-	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Root);
-
 	FVector ThrustVector = ForwardVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
 
 	// if the throttle is currently at 0.0 then feed in a reverse direction vector
 	// to slow the plane to a stop.
+	USceneComponent* Root = GetAttachmentRoot();
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Root);
 	FVector LinearVelocity = PrimitiveComponent->GetPhysicsLinearVelocity();
 	if (SpitfireCurrentThrottle < 0.001)
 	{
@@ -82,7 +83,7 @@ FVector USpitfireEngine::GetForceLocation()
 	return GetSocketLocation(FName("Engine"));
 }
 
-// Get the location and the thrust vector
+// getter for thrust location and thrust vector
 void USpitfireEngine::GetSocketWorldLocationAndThrust(FVector & Location, FVector & Thrust)
 {
 	Thrust = GetThrustVector();

@@ -41,11 +41,16 @@ void ASpitfire::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bToggle)
+	{
+		LastRotation = GetActorRotation();
+		bToggle = !bToggle;
+	}
+
 	ApplyControls(DeltaTime);
 
 	ForwardThrust();
 	//ApplyDrag();
-
 }
 
 void ASpitfire::ApplyControls(float DeltaTime)
@@ -65,6 +70,40 @@ void ASpitfire::ApplyControls(float DeltaTime)
 
 	// apply torque
 	ApplyTorque(ComboControlVector);
+}
+
+float ASpitfire::RealTimeAircraftAttitude(ERealTimeData Axis)
+{
+	float RotationValue = 0.5;
+
+	FRotator ThisRotation = GetActorRotation();
+	FRotator Rotation = ThisRotation - LastRotation;
+
+	switch (Axis)
+	{
+	case ERealTimeData::Pitch:
+		RotationValue += Rotation.Pitch / 360.0;
+		//Vector = GetActorUpVector();
+		//RotationValue += Vector.X / 2;
+		//UE_LOG(LogTemp,Warning,TEXT("PITCH   %s"),*(Vector.ToString()))
+		break;
+	case ERealTimeData::Roll:
+		RotationValue += Rotation.Roll / 360.0;
+		//Vector = GetActorRightVector();
+		//RotationValue += Vector.Z / 2;
+		//UE_LOG(LogTemp, Warning, TEXT("ROLL   %s"), *(Vector.ToString()))
+		break;
+	case ERealTimeData::Yaw:
+		RotationValue += Rotation.Yaw / 360.0;
+		//Vector = GetActorForwardVector();
+		//RotationValue += Vector.Y / 2;
+		//UE_LOG(LogTemp, Warning, TEXT("YAW   %s"), *(Vector.ToString()))
+		break;
+	default:
+		break;
+	}
+
+	return RotationValue;
 }
 
 // Apply torque to the airframe
@@ -98,6 +137,26 @@ void ASpitfire::KillThrottle()
 float ASpitfire::GetThrottle()
 {
 	return SpitfireEngine->GetThrottle();
+}
+
+FVector ASpitfire::GetLinearVelocity()
+{
+	USceneComponent* Root = GetRootComponent();
+	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Root);
+	return PrimitiveComponent->GetPhysicsLinearVelocity();
+}
+
+int32 ASpitfire::GetKts()
+{
+	FVector LinearVelocity = GetLinearVelocity();
+	return FMath::RoundToInt(LinearVelocity.Size() * CM2KTS);
+}
+
+int32 ASpitfire::GetDirectionDegrees()
+{
+	FVector LinearVelocity = GetLinearVelocity();
+	float Dummy;
+	return FMath::RoundToInt(FMath::Modf((LinearVelocity.HeadingAngle() * (180.0 / PI) + 360.0) / 360.0, &Dummy) * 360.0);
 }
 
 FVector ASpitfire::GetForwardVector()

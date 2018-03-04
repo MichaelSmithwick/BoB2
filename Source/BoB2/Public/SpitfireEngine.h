@@ -40,6 +40,6 @@ private:
 	float SpitfireCurrentThrottle = 0.0;
 
 	UPROPERTY(EditAnywhere, Category = "Throttle")
-	float SpitfireMaxThrust = 10000000.0;
+	float SpitfireMaxThrust = 35000000.0;
 
 };

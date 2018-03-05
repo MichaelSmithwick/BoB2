@@ -21,6 +21,7 @@ public:
 	void SetThrottle(float ThrottleValue);
 	float GetThrottle();
 	float GetMaxThrust();
+	void SetRestrictor(float RestrictionLevel);
 
 	UFUNCTION(BlueprintCallable)
 	FVector GetThrustVector();
@@ -39,7 +40,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Throttle")
 	float SpitfireCurrentThrottle = 0.0;
 
+	// The max speed of the spitfire was 320 kts @ 4300 lbs (2000 kg)
+	// Add enough thrust to get that speed
 	UPROPERTY(EditAnywhere, Category = "Throttle")
-	float SpitfireMaxThrust = 10000000.0;
+	float SpitfireMaxThrust = 80000000.0;
+
+	float Restrictor = 1.0;
 
 };

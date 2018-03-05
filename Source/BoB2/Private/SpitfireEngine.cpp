@@ -55,6 +55,16 @@ float USpitfireEngine::GetMaxThrust()
 	return SpitfireMaxThrust;
 }
 
+void USpitfireEngine::SetRestrictor(float RestrictionLevel)
+{
+	float tRestrictor = FMath::Clamp<float>(RestrictionLevel, 0.0, 1.0);
+	float Sign = Restrictor < tRestrictor ? 1.0 : -1.0;
+	tRestrictor = FMath::Clamp<float>(FMath::Abs(Restrictor - tRestrictor), 0, 0.1);
+	Restrictor += tRestrictor * Sign;
+
+	UE_LOG(LogTemp,Warning,TEXT("Restriction Level : %f"),Restrictor)
+}
+
 // Thrust Vector is in one direction only
 // The direction is along the forward vector of the engine socket
 FVector USpitfireEngine::GetThrustVector()
@@ -62,7 +72,7 @@ FVector USpitfireEngine::GetThrustVector()
 	// set thrust value for engine
 	FRotator SocketRotator = GetSocketRotation(FName("Engine"));
 	FVector ForwardVector = SocketRotator.Vector();
-	FVector ThrustVector = ForwardVector * SpitfireCurrentThrottle * SpitfireMaxThrust;
+	FVector ThrustVector = ForwardVector * SpitfireCurrentThrottle * SpitfireMaxThrust * Restrictor;
 
 	// if the throttle is currently at 0.0 then feed in a reverse direction vector
 	// to slow the plane to a stop.

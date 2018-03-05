@@ -60,6 +60,9 @@ public:
 	void KillThrottle();
 
 	UFUNCTION(BlueprintCallable)
+	void KillThrottleRestore();
+
+	UFUNCTION(BlueprintCallable)
 	float GetThrottle();
 
 	UFUNCTION(BlueprintCallable)
@@ -67,6 +70,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	int32 GetDirectionDegrees();
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetAltitude();
+
+	UFUNCTION(BlueprintCallable)
+	int32 GetRateOfClimb();
 
 	UFUNCTION(BlueprintCallable)
 	void YawRight(float YawAmount);
@@ -78,10 +87,16 @@ public:
 	void RollRight(float RollAmount);
 
 	UFUNCTION(BlueprintCallable)
-	struct FControlSurface& GetControlSurfaces() const;
+	float ShowLevel();
+
+	UFUNCTION(BlueprintCallable)
+	float ShowPitch();
 
 	UFUNCTION(BlueprintCallable)
 	void CenterControls();
+
+	UFUNCTION(BlueprintCallable)
+	struct FControlSurface& GetControlSurfaces() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -120,7 +135,7 @@ private:
 	float CurrentElevator = 0.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float PitchDegreesPerSecond = 45.0;
+	float PitchDegreesPerSecond = 20.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
 	float RollDegreesPerSecond = 60.0;
@@ -132,7 +147,7 @@ private:
 	float MaxRollDegPerSec = 300.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float MaxPitchDegPerSec = 300.0;
+	float MaxPitchDegPerSec = 200.0;
 
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
 	float MaxYawDegPerSec = 300.0;
@@ -144,12 +159,23 @@ private:
 	// and used to add negative torque to the aircraft to stop it from rotating about
 	// any of it's three axes
 	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
-	float AngularMultiplier = 50.0;
+	float AngularMultiplier = 45.0;
+
+	// This number is used to restrict the rate of climb of the aircraft
+	UPROPERTY(EditAnywhere, Category = "SpitfireControl")
+	float MaximumClimbRate = 2200.0; // feet per minute
 
 	USpitfireEngine* SpitfireEngine = nullptr;
 
 	FRotator LastRotation;
 	bool bToggle = false;
+
+	float MinuteCounter = 0.0; // seconds
+	int32 MinuteAltitude = 0;  // feet
+	int32 RateOfClimb = 0;     // feet per minute
+
+	// set true after first aircraft movement - keeps compass from oscillating like crazy on startup
+	bool bCompassActive = false;
 
 	void ForwardThrust();
 

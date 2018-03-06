@@ -19,6 +19,7 @@ The following keys on the number keypad have the following functions:<br/><br/>
   <tr><td>Num 3</td><td>      Yaw Right</td></tr>
   <tr><td>Num 5</td><td>      Center all controls (also stops rotation about all 3 axises)</td></tr>
   <tr><td>Home</td><td>       Return aircraft to starting position</td></tr>
+  <tr><td>Tab</td><td>        Toggle between cockpit view and tail view of aircraft</td></tr>
   <tr><td>Escape</td><td>     Exit game.</td></tr>
 </table><br/>
 

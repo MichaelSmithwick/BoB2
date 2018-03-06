@@ -63,7 +63,7 @@ void ASpitfire::Tick(float DeltaTime)
 	// apply engine produced thrust to aircraft
 	ForwardThrust();
 
-	ApplyDrag();
+	//ApplyDrag();
 }
 
 // applies control surface settings as torque in the Pitch, Roll, and Yaw axises
